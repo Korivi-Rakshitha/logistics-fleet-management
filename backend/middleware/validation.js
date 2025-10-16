@@ -22,11 +22,11 @@ const schemas = {
     email: Joi.string().email().required(),
     password: Joi.string().min(6).required(),
     role: Joi.string().valid('admin', 'driver', 'customer').required(),
-    phone: Joi.string().pattern(/^[0-9]{10,15}$/).optional(),
-    address: Joi.string().max(500).optional(),
-    pan_card: Joi.string().length(10).uppercase().optional(),
-    aadhaar_card: Joi.string().pattern(/^[0-9]{12}$/).optional(),
-    driving_license: Joi.string().min(8).max(16).uppercase().optional()
+    phone: Joi.string().pattern(/^[0-9]{10,15}$/).allow('').optional(),
+    address: Joi.string().max(500).allow('').optional(),
+    pan_card: Joi.string().length(10).allow('').optional(),
+    aadhaar_card: Joi.string().pattern(/^[0-9]{12}$/).allow('').optional(),
+    driving_license: Joi.string().min(8).max(20).allow('').optional()
   }),
 
   login: Joi.object({
