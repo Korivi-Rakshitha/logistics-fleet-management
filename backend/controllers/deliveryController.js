@@ -1,4 +1,4 @@
-const Delivery = require('../models/Delivery');
+  const Delivery = require('../models/Delivery');
 const Vehicle = require('../models/Vehicle');
 const User = require('../models/User');
 
@@ -256,6 +256,50 @@ const deleteDelivery = async (req, res) => {
   }
 };
 
+const cancelDelivery = async (req, res) => {
+  try {
+    const deliveryId = req.params.id;
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      return res.status(404).json({ error: 'Delivery not found' });
+    }
+
+    // Only allow cancellation of pending or assigned deliveries
+    if (!['pending', 'assigned'].includes(delivery.status)) {
+      return res.status(400).json({
+        error: 'Cannot cancel delivery',
+        message: 'Only pending or assigned deliveries can be cancelled'
+      });
+    }
+
+    await Delivery.updateStatus(deliveryId, 'cancelled');
+
+    // Update vehicle status to available if assigned
+    if (delivery.vehicle_id) {
+      await Vehicle.update(delivery.vehicle_id, { status: 'available' });
+    }
+
+    const updatedDelivery = await Delivery.findById(deliveryId);
+
+    // Emit socket event for real-time update
+    if (req.app.get('io')) {
+      req.app.get('io').emit('delivery-status-updated', {
+        deliveryId,
+        status: 'cancelled',
+        delivery: updatedDelivery
+      });
+    }
+
+    res.json({
+      message: 'Delivery cancelled successfully',
+      delivery: updatedDelivery
+    });
+  } catch (error) {
+    console.error('Cancel delivery error:', error);
+    res.status(500).json({ error: 'Failed to cancel delivery' });
+  }
+};
+
 module.exports = {
   createDelivery,
   getAllDeliveries,
@@ -265,5 +309,6 @@ module.exports = {
   getMyDeliveries,
   getActiveDeliveries,
   getDeliveryStats,
-  deleteDelivery
+  deleteDelivery,
+  cancelDelivery
 };

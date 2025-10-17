@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Truck, User, Mail, Lock, Phone, MapPin, AlertCircle, Shield, Key, FileText, Upload, Package } from 'lucide-react';
+import { Truck, User, Mail, Lock, Phone, MapPin, AlertCircle, Shield, Key, FileText, Upload, Package, ArrowLeft } from 'lucide-react';
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -176,7 +176,7 @@ const Signup = () => {
       if (formData.role === 'driver') {
         alert('Registration submitted successfully! Your account is under review. You will be notified once admin approves your documents.');
       }
-      navigate('/');
+      navigate('/dashboard');
     } else {
       setError(result.error);
     }
@@ -194,7 +194,7 @@ const Signup = () => {
       const result = await register(formData);
       
       if (result.success) {
-        navigate('/');
+        navigate('/dashboard');
       } else {
         setError(result.error);
       }
@@ -247,6 +247,14 @@ const Signup = () => {
 
       {/* Signup Form Card */}
       <div className="max-w-md w-full bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-8 relative z-10 border border-white/20">
+        {/* Back to Home Button */}
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-4 left-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 mr-1" />
+          <span className="text-sm font-medium">Home</span>
+        </button>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
             <Truck className="w-8 h-8 text-white" />

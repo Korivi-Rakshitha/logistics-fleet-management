@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { vehicleAPI, deliveryAPI, routeAPI, userAPI, driverVerificationAPI } from '../services/api';
+import { vehicleAPI, deliveryAPI, routeAPI, userAPI, driverVerificationAPI, trackingAPI } from '../services/api';
 import { 
   Truck, Package, Users, BarChart3, Plus, LogOut, 
   Edit, Trash2, CheckCircle, XCircle, Clock, Navigation, Shield, TrendingUp, Zap, FileText, UserCheck, Mail, Phone, MapPin
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
     driver_id: '',
     vehicle_id: ''
   });
+  const [activeDrivers, setActiveDrivers] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -42,7 +43,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [vehiclesRes, deliveriesRes, routesRes, statsRes, driversRes, customersRes, pendingDriversRes] = await Promise.all([
+      const [vehiclesRes, deliveriesRes, routesRes, statsRes, driversRes, customersRes, pendingDriversRes, activeDriversRes] = await Promise.all([
         vehicleAPI.getAll(),
         deliveryAPI.getAll(),
         routeAPI.getAll(),
@@ -50,6 +51,7 @@ const AdminDashboard = () => {
         userAPI.getDrivers(),
         userAPI.getCustomers(),
         driverVerificationAPI.getPending(),
+        trackingAPI.getActiveDrivers(),
       ]);
       setVehicles(vehiclesRes.data.vehicles);
       setDeliveries(deliveriesRes.data.deliveries);
@@ -58,6 +60,7 @@ const AdminDashboard = () => {
       setDrivers(driversRes.data.users || []);
       setCustomers(customersRes.data.users || []);
       setPendingDrivers(pendingDriversRes.data.drivers || []);
+      setActiveDrivers(activeDriversRes.data.activeDrivers || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -527,15 +530,85 @@ const AdminDashboard = () => {
 
         {activeTab === 'tracking' && (
           <div className="space-y-6">
-            <h2 className="text-2xl font-bold">Live Tracking</h2>
-            {selectedDelivery ? (
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Driver Location Tracking</h2>
+              <div className="text-sm text-gray-600">
+                {activeDrivers.length} active driver{activeDrivers.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+
+            {activeDrivers.length > 0 ? (
               <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '600px' }}>
-                <MapTracker delivery={selectedDelivery} />
+                <MapTracker activeDrivers={activeDrivers} />
               </div>
             ) : (
               <div className="bg-white rounded-lg shadow p-12 text-center">
                 <Navigation className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">Select a delivery to track</p>
+                <p className="text-gray-500">No active drivers currently on deliveries</p>
+              </div>
+            )}
+
+            {/* Active Drivers List */}
+            {activeDrivers.length > 0 && (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-4">Active Drivers</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {activeDrivers.map((driver) => (
+                    <div key={driver.driver_id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Navigation className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900">{driver.driver_name}</h4>
+                          <p className="text-sm text-gray-600">{driver.driver_phone}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Vehicle:</span>
+                          <span className="font-medium">{driver.vehicle.vehicle_number}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Type:</span>
+                          <span>{driver.vehicle.vehicle_type}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Status:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${
+                            driver.active_delivery.status === 'on_route' ? 'bg-blue-100 text-blue-800' :
+                            driver.active_delivery.status === 'picked_up' ? 'bg-green-100 text-green-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {driver.active_delivery.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        {driver.speed && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Speed:</span>
+                            <span>{driver.speed.toFixed(1)} km/h</span>
+                          </div>
+                        )}
+                        {driver.last_update && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-500">Last Update:</span>
+                            <span className="text-xs">
+                              {new Date(driver.last_update).toLocaleTimeString()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-3 pt-3 border-t">
+                        <p className="text-xs text-gray-500 mb-1">Current Delivery</p>
+                        <p className="text-sm font-medium">
+                          {driver.active_delivery.pickup_location} → {driver.active_delivery.drop_location}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import HomePage from './components/HomePage';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import AdminDashboard from './components/AdminDashboard';
@@ -55,10 +56,11 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route
-            path="/"
+            path="/dashboard"
             element={
               <ProtectedRoute>
                 <DashboardRouter />

@@ -61,6 +61,7 @@ export const deliveryAPI = {
   create: (data) => api.post('/deliveries', data),
   updateStatus: (id, data) => api.put(`/deliveries/${id}/status`, data),
   assignDriver: (id, data) => api.put(`/deliveries/${id}/assign`, data),
+  cancel: (id) => api.put(`/deliveries/${id}/cancel`),
   delete: (id) => api.delete(`/deliveries/${id}`),
   getMyDeliveries: () => api.get('/deliveries/my-deliveries'),
   getActive: () => api.get('/deliveries/active'),
@@ -72,6 +73,7 @@ export const trackingAPI = {
   updateLocation: (data) => api.post('/tracking/location', data),
   getDeliveryTracking: (id) => api.get(`/tracking/deliveries/${id}`),
   getRecent: (params) => api.get('/tracking/recent', { params }),
+  getActiveDrivers: () => api.get('/tracking/active-drivers'),
 };
 
 // Route APIs

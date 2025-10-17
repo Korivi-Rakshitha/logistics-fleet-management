@@ -1,6 +1,7 @@
 const Tracking = require('../models/Tracking');
 const Delivery = require('../models/Delivery');
 const Vehicle = require('../models/Vehicle');
+const db = require('../utils/db');
 
 const updateLocation = async (req, res) => {
   try {
@@ -111,8 +112,86 @@ const getRecentTracking = async (req, res) => {
   }
 };
 
+const getActiveDriversLocations = async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT
+        d.id as delivery_id,
+        d.status as delivery_status,
+        d.pickup_location,
+        d.drop_location,
+        d.pickup_lat,
+        d.pickup_lng,
+        d.drop_lat,
+        d.drop_lng,
+        u.id as driver_id,
+        u.name as driver_name,
+        u.phone as driver_phone,
+        v.id as vehicle_id,
+        v.vehicle_number,
+        v.vehicle_type,
+        v.current_location_lat,
+        v.current_location_lng,
+        t.current_lat,
+        t.current_lng,
+        t.speed,
+        t.heading,
+        t.timestamp as last_update
+      FROM deliveries d
+      LEFT JOIN users u ON d.driver_id = u.id
+      LEFT JOIN vehicles v ON d.vehicle_id = v.id
+      LEFT JOIN tracking t ON d.id = t.delivery_id
+      WHERE d.status IN ('on_route', 'picked_up')
+      AND d.driver_id IS NOT NULL
+      AND t.id = (
+        SELECT MAX(id) FROM tracking WHERE delivery_id = d.id
+      )
+      ORDER BY t.timestamp DESC
+    `);
+
+    // Group by driver to avoid duplicates
+    const driversMap = new Map();
+    rows.forEach(row => {
+      if (!driversMap.has(row.driver_id)) {
+        driversMap.set(row.driver_id, {
+          driver_id: row.driver_id,
+          driver_name: row.driver_name,
+          driver_phone: row.driver_phone,
+          current_lat: row.current_lat || row.current_location_lat,
+          current_lng: row.current_lng || row.current_location_lng,
+          speed: row.speed,
+          heading: row.heading,
+          last_update: row.last_update,
+          vehicle: {
+            id: row.vehicle_id,
+            vehicle_number: row.vehicle_number,
+            vehicle_type: row.vehicle_type
+          },
+          active_delivery: {
+            id: row.delivery_id,
+            status: row.delivery_status,
+            pickup_location: row.pickup_location,
+            drop_location: row.drop_location,
+            pickup_lat: row.pickup_lat,
+            pickup_lng: row.pickup_lng,
+            drop_lat: row.drop_lat,
+            drop_lng: row.drop_lng
+          }
+        });
+      }
+    });
+
+    const activeDrivers = Array.from(driversMap.values());
+    res.json({ activeDrivers });
+  } catch (error) {
+    console.error('Get active drivers locations error:', error);
+    res.status(500).json({ error: 'Failed to fetch active drivers locations' });
+  }
+};
+
 module.exports = {
   updateLocation,
   getDeliveryTracking,
-  getRecentTracking
+  getRecentTracking,
+  getActiveDriversLocations
 };

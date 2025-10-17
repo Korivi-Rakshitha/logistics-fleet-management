@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Truck, Mail, Lock, AlertCircle, Key, Shield, Package } from 'lucide-react';
+import { Truck, Mail, Lock, AlertCircle, Key, Shield, Package, ArrowLeft } from 'lucide-react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
+  const userType = location.state?.userType;
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -43,7 +45,7 @@ const Login = () => {
         setLoading(false);
       } else {
         // Non-admin users can proceed directly
-        navigate('/');
+        navigate('/dashboard');
       }
     } else {
       setError(result.error);
@@ -57,7 +59,7 @@ const Login = () => {
     if (passkey === ADMIN_PASSKEY) {
       // Correct passkey - allow access
       setShowPasskeyModal(false);
-      navigate('/');
+      navigate('/dashboard');
     } else {
       // Wrong passkey - logout and show error
       setError('Invalid admin passkey. Access denied.');
@@ -110,12 +112,22 @@ const Login = () => {
 
       {/* Login Form Card */}
       <div className="max-w-md w-full bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-8 relative z-10 border border-white/20">
+        {/* Back to Home Button */}
+        <button
+          onClick={() => navigate('/')}
+          className="absolute top-4 left-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5 mr-1" />
+          <span className="text-sm font-medium">Home</span>
+        </button>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-4">
             <Truck className="w-8 h-8 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
-          <p className="text-gray-600 mt-2">Sign in to your account</p>
+          <p className="text-gray-600 mt-2">
+            {userType ? `Sign in as ${userType.charAt(0).toUpperCase() + userType.slice(1)}` : 'Sign in to your account'}
+          </p>
         </div>
 
         {error && (

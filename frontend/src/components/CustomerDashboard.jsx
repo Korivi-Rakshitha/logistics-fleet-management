@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { deliveryAPI } from '../services/api';
-import { Package, MapPin, Clock, CheckCircle, Navigation, LogOut, Eye, ShoppingBag, TrendingUp, Award, Zap, Plus, Truck, Send } from 'lucide-react';
+import { Package, MapPin, Clock, CheckCircle, Navigation, LogOut, Eye, ShoppingBag, TrendingUp, Award, Zap, Plus, Truck, Send, X } from 'lucide-react';
 import MapTracker from './MapTracker';
 import { format } from 'date-fns';
 
@@ -40,6 +40,25 @@ const CustomerDashboard = () => {
       console.error('Error fetching deliveries:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelDelivery = async (deliveryId) => {
+    if (!window.confirm('Are you sure you want to cancel this delivery?')) {
+      return;
+    }
+
+    try {
+      await deliveryAPI.cancel(deliveryId);
+      alert('Delivery cancelled successfully!');
+      fetchDeliveries();
+      if (selectedDelivery?.id === deliveryId) {
+        setSelectedDelivery(null);
+      }
+    } catch (error) {
+      console.error('Error cancelling delivery:', error);
+      const errorMsg = error.response?.data?.error || 'Failed to cancel delivery. Please try again.';
+      alert(errorMsg);
     }
   };
 
@@ -493,6 +512,19 @@ const CustomerDashboard = () => {
                         <div className="mt-3 pt-3 border-t text-sm">
                           <p className="text-gray-500">Driver: <span className="font-medium text-gray-700">{delivery.driver_name}</span></p>
                         </div>
+                      )}
+
+                      {['pending', 'assigned'].includes(delivery.status) && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelDelivery(delivery.id);
+                          }}
+                          className="mt-3 w-full flex items-center justify-center gap-2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                        >
+                          <X className="w-4 h-4" />
+                          Cancel Delivery
+                        </button>
                       )}
 
                       {['on_route', 'picked_up'].includes(delivery.status) && (

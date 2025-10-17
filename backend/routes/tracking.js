@@ -20,4 +20,7 @@ router.get('/deliveries/:id', trackingController.getDeliveryTracking);
 // Get recent tracking - admin only
 router.get('/recent', authorize('admin'), trackingController.getRecentTracking);
 
+// Get active drivers locations - admin only
+router.get('/active-drivers', authorize('admin'), trackingController.getActiveDriversLocations);
+
 module.exports = router;

@@ -42,4 +42,7 @@ router.put('/:id/assign', authorize('admin'), deliveryController.assignDriver);
 // Delete delivery - admin only
 router.delete('/:id', authorize('admin'), deliveryController.deleteDelivery);
 
+// Cancel delivery - admin and customers
+router.put('/:id/cancel', authorize('admin', 'customer'), deliveryController.cancelDelivery);
+
 module.exports = router;
