@@ -1,4 +1,4 @@
-const db = require('../utils/database');
+const db = require('../utils/db-sqlite').raw;
 
 class Rating {
   // Create a new rating

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { deliveryAPI } from '../services/api';
-import { Package, MapPin, Clock, CheckCircle, Navigation, LogOut, Eye, ShoppingBag, TrendingUp, Award, Zap, Plus, Truck, Send, X } from 'lucide-react';
+import { deliveryAPI, ratingAPI } from '../services/api';
+import { Package, MapPin, Clock, CheckCircle, Navigation, LogOut, Eye, ShoppingBag, TrendingUp, Award, Zap, Plus, Truck, Send, X, Star } from 'lucide-react';
 import MapTracker from './MapTracker';
+import RatingComponent from './RatingComponent';
 import { format } from 'date-fns';
 
 const CustomerDashboard = () => {
@@ -26,6 +27,13 @@ const CustomerDashboard = () => {
     scheduled_delivery_time: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [ratingForm, setRatingForm] = useState({
+    delivery_id: null,
+    rating: 5,
+    feedback: ''
+  });
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     fetchDeliveries();
@@ -59,6 +67,37 @@ const CustomerDashboard = () => {
       console.error('Error cancelling delivery:', error);
       const errorMsg = error.response?.data?.error || 'Failed to cancel delivery. Please try again.';
       alert(errorMsg);
+    }
+  };
+
+  const handleRateDelivery = (delivery) => {
+    setRatingForm({
+      delivery_id: delivery.id,
+      rating: 5,
+      feedback: ''
+    });
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmit = async (e) => {
+    e.preventDefault();
+    setSubmittingRating(true);
+    try {
+      await ratingAPI.create(ratingForm);
+      alert('Thank you for your feedback!');
+      setShowRatingModal(false);
+      setRatingForm({
+        delivery_id: null,
+        rating: 5,
+        feedback: ''
+      });
+      fetchDeliveries();
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      const errorMsg = error.response?.data?.message || 'Failed to submit rating. Please try again.';
+      alert(errorMsg);
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -539,6 +578,19 @@ const CustomerDashboard = () => {
                           Track Live
                         </button>
                       )}
+
+                      {delivery.status === 'delivered' && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRateDelivery(delivery);
+                          }}
+                          className="mt-3 w-full flex items-center justify-center gap-2 bg-yellow-600 text-white py-2 rounded-lg hover:bg-yellow-700 transition text-sm"
+                        >
+                          <Star className="w-4 h-4" />
+                          Rate Delivery
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
@@ -619,6 +671,53 @@ const CustomerDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <h2 className="text-xl font-bold mb-4">Rate Your Delivery</h2>
+            <form onSubmit={handleRatingSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
+                <RatingComponent
+                  rating={ratingForm.rating}
+                  onRatingChange={(rating) => setRatingForm({...ratingForm, rating})}
+                  size="large"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Feedback (Optional)</label>
+                <textarea
+                  value={ratingForm.feedback}
+                  onChange={(e) => setRatingForm({...ratingForm, feedback: e.target.value})}
+                  rows="3"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  placeholder="Tell us about your experience..."
+                />
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={submittingRating}
+                  className="flex-1 bg-gradient-to-r from-pink-600 to-purple-600 text-white py-2 px-4 rounded-lg hover:from-pink-700 hover:to-purple-700 transition disabled:opacity-50"
+                >
+                  {submittingRating ? 'Submitting...' : 'Submit Rating'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowRatingModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

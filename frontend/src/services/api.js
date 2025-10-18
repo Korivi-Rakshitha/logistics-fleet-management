@@ -99,4 +99,16 @@ export const driverVerificationAPI = {
   reject: (id, data) => api.put(`/driver-verification/${id}/reject`, data),
 };
 
+// Rating APIs
+export const ratingAPI = {
+  create: (data) => api.post('/ratings', data),
+  getById: (id) => api.get(`/ratings/${id}`),
+  getByDelivery: (deliveryId) => api.get(`/ratings/delivery/${deliveryId}`),
+  getByDriver: (driverId) => api.get(`/ratings/driver/${driverId}`),
+  getMyRatings: () => api.get('/ratings/customer/me'),
+  getAll: (params) => api.get('/ratings', { params }),
+  update: (id, data) => api.put(`/ratings/${id}`, data),
+  delete: (id) => api.delete(`/ratings/${id}`),
+};
+
 export default api;

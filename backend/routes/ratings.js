@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const ratingController = require('../controllers/ratingController');
-const { authenticateToken, requireRole } = require('../middleware/auth');
+const { auth, authorize } = require('../middleware/auth');
 
 // All routes require authentication
-router.use(authenticateToken);
+router.use(auth);
 
 // Create a new rating
 router.post('/', ratingController.createRating);
@@ -22,15 +22,15 @@ router.get('/driver/:driverId', ratingController.getDriverRatings);
 router.get('/customer/me', ratingController.getCustomerRatings);
 
 // Get all ratings by specific customer (admin only)
-router.get('/customer/:customerId', requireRole('admin'), ratingController.getCustomerRatings);
+router.get('/customer/:customerId', authorize('admin'), ratingController.getCustomerRatings);
 
 // Get all ratings (admin only)
-router.get('/', requireRole('admin'), ratingController.getAllRatings);
+router.get('/', authorize('admin'), ratingController.getAllRatings);
 
 // Update rating
 router.put('/:id', ratingController.updateRating);
 
 // Delete rating (admin only)
-router.delete('/:id', requireRole('admin'), ratingController.deleteRating);
+router.delete('/:id', authorize('admin'), ratingController.deleteRating);
 
 module.exports = router;

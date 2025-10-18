@@ -44,6 +44,7 @@ const trackingRoutes = require('./routes/tracking');
 const routeRoutes = require('./routes/routes');
 const userRoutes = require('./routes/users');
 const driverVerificationRoutes = require('./routes/driverVerification');
+const ratingRoutes = require('./routes/ratings');
 
 // API routes
 app.use('/api/auth', authRoutes);
@@ -53,6 +54,7 @@ app.use('/api/tracking', trackingRoutes);
 app.use('/api/routes', routeRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/driver-verification', driverVerificationRoutes);
+app.use('/api/ratings', ratingRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -110,7 +112,18 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 Socket.io server ready for real-time tracking`);
-});
+const startServer = (port) => {
+  server.listen(port, () => {
+    console.log(`🚀 Server running on port ${port}`);
+    console.log(`📡 Socket.io server ready for real-time tracking`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying ${port + 1}...`);
+      startServer(port + 1);
+    } else {
+      console.error('Server error:', err);
+    }
+  });
+};
+
+startServer(PORT);

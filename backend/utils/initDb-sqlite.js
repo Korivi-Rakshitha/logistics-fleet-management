@@ -23,6 +23,12 @@ const initDatabase = async () => {
         role TEXT CHECK(role IN ('admin', 'driver', 'customer')) NOT NULL,
         phone TEXT,
         address TEXT,
+        verification_status TEXT CHECK(verification_status IN ('pending', 'approved', 'rejected')) DEFAULT 'approved',
+        pan_card TEXT,
+        aadhaar_card TEXT,
+        driving_license TEXT,
+        rejection_reason TEXT,
+        verified_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
@@ -136,6 +142,25 @@ const initDatabase = async () => {
     `);
     console.log('✅ Delivery History table created');
 
+    // Create Ratings table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        delivery_id INTEGER NOT NULL,
+        customer_id INTEGER NOT NULL,
+        driver_id INTEGER NOT NULL,
+        rating INTEGER NOT NULL CHECK(rating >= 1 AND rating <= 5),
+        feedback TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (delivery_id) REFERENCES deliveries(id) ON DELETE CASCADE,
+        FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (driver_id) REFERENCES users(id) ON DELETE CASCADE,
+        UNIQUE(delivery_id, customer_id)
+      )
+    `);
+    console.log('✅ Ratings table created');
+
     // Create trigger for updated_at on users
     db.exec(`
       CREATE TRIGGER IF NOT EXISTS update_users_timestamp 
@@ -156,10 +181,19 @@ const initDatabase = async () => {
 
     // Create trigger for updated_at on deliveries
     db.exec(`
-      CREATE TRIGGER IF NOT EXISTS update_deliveries_timestamp 
+      CREATE TRIGGER IF NOT EXISTS update_deliveries_timestamp
       AFTER UPDATE ON deliveries
       BEGIN
         UPDATE deliveries SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+      END
+    `);
+
+    // Create trigger for updated_at on ratings
+    db.exec(`
+      CREATE TRIGGER IF NOT EXISTS update_ratings_timestamp
+      AFTER UPDATE ON ratings
+      BEGIN
+        UPDATE ratings SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
       END
     `);
 

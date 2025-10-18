@@ -1,0 +1,40 @@
+.rating-component {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-component.small {
+  gap: 2px;
+}
+
+.rating-component.large {
+  gap: 6px;
+}
+
+.star {
+  transition: color 0.2s ease;
+}
+
+.star.interactive:hover {
+  transform: scale(1.1);
+}
+
+.star.readonly {
+  opacity: 0.8;
+}
+
+.rating-text {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+.rating-component.small .rating-text {
+  font-size: 12px;
+}
+
+.rating-component.large .rating-text {
+  font-size: 16px;
+}

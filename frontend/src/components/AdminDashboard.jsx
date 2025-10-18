@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { vehicleAPI, deliveryAPI, routeAPI, userAPI, driverVerificationAPI, trackingAPI } from '../services/api';
-import { 
-  Truck, Package, Users, BarChart3, Plus, LogOut, 
-  Edit, Trash2, CheckCircle, XCircle, Clock, Navigation, Shield, TrendingUp, Zap, FileText, UserCheck, Mail, Phone, MapPin
+import { vehicleAPI, deliveryAPI, routeAPI, userAPI, driverVerificationAPI, trackingAPI, ratingAPI } from '../services/api';
+import {
+  Truck, Package, Users, BarChart3, Plus, LogOut,
+  Edit, Trash2, CheckCircle, XCircle, Clock, Navigation, Shield, TrendingUp, Zap, FileText, UserCheck, Mail, Phone, MapPin, Award
 } from 'lucide-react';
 import MapTracker from './MapTracker';
+import RatingComponent from './RatingComponent';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -35,6 +36,7 @@ const AdminDashboard = () => {
     vehicle_id: ''
   });
   const [activeDrivers, setActiveDrivers] = useState([]);
+  const [ratings, setRatings] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -43,7 +45,7 @@ const AdminDashboard = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [vehiclesRes, deliveriesRes, routesRes, statsRes, driversRes, customersRes, pendingDriversRes, activeDriversRes] = await Promise.all([
+      const [vehiclesRes, deliveriesRes, routesRes, statsRes, driversRes, customersRes, pendingDriversRes, activeDriversRes, ratingsRes] = await Promise.all([
         vehicleAPI.getAll(),
         deliveryAPI.getAll(),
         routeAPI.getAll(),
@@ -52,6 +54,7 @@ const AdminDashboard = () => {
         userAPI.getCustomers(),
         driverVerificationAPI.getPending(),
         trackingAPI.getActiveDrivers(),
+        ratingAPI.getAll(),
       ]);
       setVehicles(vehiclesRes.data.vehicles);
       setDeliveries(deliveriesRes.data.deliveries);
@@ -61,6 +64,7 @@ const AdminDashboard = () => {
       setCustomers(customersRes.data.users || []);
       setPendingDrivers(pendingDriversRes.data.drivers || []);
       setActiveDrivers(activeDriversRes.data.activeDrivers || []);
+      setRatings(ratingsRes.data.data || []);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -207,7 +211,7 @@ const AdminDashboard = () => {
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex gap-8">
-            {['overview', 'vehicles', 'deliveries', 'routes', 'tracking'].map((tab) => (
+            {['overview', 'vehicles', 'deliveries', 'routes', 'tracking', 'ratings'].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -611,6 +615,126 @@ const AdminDashboard = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'ratings' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">Customer Ratings & Reviews</h2>
+              <div className="text-sm text-gray-600">
+                {ratings.length} total rating{ratings.length !== 1 ? 's' : ''}
+              </div>
+            </div>
+
+            {/* Rating Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="bg-gradient-to-br from-yellow-500 to-orange-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-yellow-100 text-sm font-semibold">Average Rating</p>
+                    <p className="text-4xl font-bold mt-2">
+                      {ratings.length > 0 ? (ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length).toFixed(1) : '0.0'}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <Award className="w-10 h-10" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-green-100 text-sm font-semibold">5-Star Ratings</p>
+                    <p className="text-4xl font-bold mt-2">
+                      {ratings.filter(r => r.rating === 5).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <CheckCircle className="w-10 h-10" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-blue-100 text-sm font-semibold">4-Star Ratings</p>
+                    <p className="text-4xl font-bold mt-2">
+                      {ratings.filter(r => r.rating === 4).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <TrendingUp className="w-10 h-10" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gradient-to-br from-red-500 to-pink-600 rounded-2xl shadow-xl p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-red-100 text-sm font-semibold">Low Ratings (1-3)</p>
+                    <p className="text-4xl font-bold mt-2">
+                      {ratings.filter(r => r.rating <= 3).length}
+                    </p>
+                  </div>
+                  <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+                    <XCircle className="w-10 h-10" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Ratings List */}
+            <div className="bg-white rounded-lg shadow overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="text-left py-3 px-4">Delivery</th>
+                      <th className="text-left py-3 px-4">Customer</th>
+                      <th className="text-left py-3 px-4">Driver</th>
+                      <th className="text-left py-3 px-4">Rating</th>
+                      <th className="text-left py-3 px-4">Feedback</th>
+                      <th className="text-left py-3 px-4">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ratings.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="text-center py-8 text-gray-500">
+                          No ratings yet
+                        </td>
+                      </tr>
+                    ) : (
+                      ratings.map((rating) => (
+                        <tr key={rating.id} className="border-b hover:bg-gray-50">
+                          <td className="py-3 px-4">#{rating.delivery_id}</td>
+                          <td className="py-3 px-4">{rating.customer_name}</td>
+                          <td className="py-3 px-4">{rating.driver_name}</td>
+                          <td className="py-3 px-4">
+                            <RatingComponent
+                              rating={rating.rating}
+                              readonly={true}
+                              size="small"
+                            />
+                          </td>
+                          <td className="py-3 px-4 max-w-xs">
+                            <p className="text-sm text-gray-700 truncate" title={rating.feedback}>
+                              {rating.feedback || 'No feedback provided'}
+                            </p>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-gray-600">
+                            {new Date(rating.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         )}
       </main>
